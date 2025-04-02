@@ -1,12 +1,6 @@
-# task_management/serializers.py
 from rest_framework import serializers
-from .models import Task, Project
-from users.models import User
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email']
+from .models import Task, Project, Comment, TaskHistory
+from users.serializers import User, UserSerializer
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,19 +12,47 @@ class TaskSerializer(serializers.ModelSerializer):
     assigned_to = UserSerializer(many=True, read_only=True)
     project = ProjectSerializer(read_only=True)
     
-    assigned_to_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=User.objects.all(),
-        source='assigned_to',
-        write_only=True
-    )
-    project_id = serializers.PrimaryKeyRelatedField(
-        queryset=Project.objects.all(),
-        source='project',
-        write_only=True,
-        required=False
-    )
-
     class Meta:
         model = Task
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'created_by')
+
+class TaskCreateUpdateSerializer(serializers.ModelSerializer):
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all(),
+        required=False
+    )
+    
+    class Meta:
+        model = Task
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'created_by')
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
+    mentions = UserSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'author')
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    mentions = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all(),
+        required=False
+    )
+    
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at', 'author')
+
+class TaskHistorySerializer(serializers.ModelSerializer):
+    changed_by = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = TaskHistory
         fields = '__all__'
